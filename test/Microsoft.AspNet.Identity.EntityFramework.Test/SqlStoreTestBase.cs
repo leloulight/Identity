@@ -8,20 +8,30 @@ using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity.Test;
+using Microsoft.AspNet.Testing;
 using Microsoft.AspNet.Testing.xunit;
 using Microsoft.Data.Entity;
-using Microsoft.Data.Entity.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Microsoft.AspNet.Identity.EntityFramework.Test
 {
-    public abstract class SqlStoreTestBase<TUser, TRole, TKey> : UserManagerTestBase<TUser, TRole, TKey>
+    public abstract class SqlStoreTestBase<TUser, TRole, TKey> : UserManagerTestBase<TUser, TRole, TKey>, IClassFixture<ScratchDatabaseFixture>
         where TUser : IdentityUser<TKey>, new()
         where TRole : IdentityRole<TKey>, new()
         where TKey : IEquatable<TKey>
     {
-        public abstract string ConnectionString { get; }
+        private readonly ScratchDatabaseFixture _fixture;
+
+        protected SqlStoreTestBase(ScratchDatabaseFixture fixture)
+        {
+            _fixture = fixture;
+        }
+
+        protected override bool ShouldSkipDbTests()
+        {
+            return TestPlatformHelper.IsMono || !TestPlatformHelper.IsWindows;
+        }
 
         public class TestDbContext : IdentityDbContext<TUser, TRole, TKey> { }
 
@@ -52,36 +62,9 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         protected override Expression<Func<TUser, bool>> UserNameStartsWithPredicate(string userName) => u => u.UserName.StartsWith(userName);
 
-
-        [TestPriority(-1000)]
-        [ConditionalFact]
-        [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
-        public void DropDatabaseStart()
+        public TestDbContext CreateContext()
         {
-            DropDb();
-        }
-
-        [TestPriority(10000)]
-        [ConditionalFact]
-        [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
-        public void DropDatabaseDone()
-        {
-            DropDb();
-        }
-
-        public void DropDb()
-        {
-            var db = DbUtil.Create<TestDbContext>(ConnectionString);
-            db.Database.EnsureDeleted();
-        }
-
-        public TestDbContext CreateContext(bool delete = false)
-        {
-            var db = DbUtil.Create<TestDbContext>(ConnectionString);
-            if (delete)
-            {
-                db.Database.EnsureDeleted();
-            }
+            var db = DbUtil.Create<TestDbContext>(_fixture.ConnectionString);
             db.Database.EnsureCreated();
             return db;
         }
@@ -93,12 +76,12 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         protected override void AddUserStore(IServiceCollection services, object context = null)
         {
-            services.AddInstance<IUserStore<TUser>>(new UserStore<TUser, TRole, TestDbContext, TKey>((TestDbContext)context));
+            services.AddSingleton<IUserStore<TUser>>(new UserStore<TUser, TRole, TestDbContext, TKey>((TestDbContext)context));
         }
 
         protected override void AddRoleStore(IServiceCollection services, object context = null)
         {
-            services.AddInstance<IRoleStore<TRole>>(new RoleStore<TRole, TestDbContext, TKey>((TestDbContext)context));
+            services.AddSingleton<IRoleStore<TRole>>(new RoleStore<TRole, TestDbContext, TKey>((TestDbContext)context));
         }
 
         protected override void SetUserPasswordHash(TUser user, string hashedPassword)
@@ -106,13 +89,10 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             user.PasswordHash = hashedPassword;
         }
 
-        public void EnsureDatabase()
-        {
-            CreateContext();
-        }
-
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public void EnsureDefaultSchema()
         {
             VerifyDefaultSchema(CreateContext());
@@ -182,6 +162,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task DeleteRoleNonEmptySucceedsTest()
         {
             // Need fail if not empty?
@@ -208,6 +190,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task DeleteUserRemovesFromRoleTest()
         {
             // Need fail if not empty?
@@ -233,6 +217,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public void CanCreateUserUsingEF()
         {
             using (var db = CreateContext())
@@ -247,6 +233,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task CanCreateUsingManager()
         {
             var manager = CreateManager();
@@ -281,6 +269,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task LoadFromDbFindByIdTest()
         {
             var db = CreateContext();
@@ -298,6 +288,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task LoadFromDbFindByNameTest()
         {
             var db = CreateContext();
@@ -314,6 +306,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task LoadFromDbFindByLoginTest()
         {
             var db = CreateContext();
@@ -330,6 +324,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         [ConditionalFact]
         [FrameworkSkipCondition(RuntimeFrameworks.Mono)]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
         public async Task LoadFromDbFindByEmailTest()
         {
             var db = CreateContext();

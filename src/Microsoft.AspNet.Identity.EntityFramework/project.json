@@ -22,6 +22,7 @@
     },
     "dotnet5.4": {
       "dependencies": {
+<<<<<<< HEAD
         "System.Collections": "4.0.11-beta-23516",
         "System.ComponentModel": "4.0.1-beta-23516",
         "System.ComponentModel.TypeConverter": "4.0.1-beta-23516",
@@ -39,6 +40,9 @@
         "System.Security.Principal": "4.0.1-beta-23516",
         "System.Text.Encoding": "4.0.11-beta-23516",
         "System.Threading.Tasks": "4.0.11-beta-23516"
+=======
+        "System.ComponentModel.TypeConverter": "4.0.1-*"
+>>>>>>> refs/remotes/aspnet/dev
       }
     }
   }

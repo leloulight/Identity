@@ -5,6 +5,7 @@
   "description": "Identity sample MVC application on K",
   "version": "1.0.0-*",
   "dependencies": {
+<<<<<<< HEAD
     "Microsoft.AspNet.Server.IIS": "1.0.0-*",
     "Microsoft.AspNet.Mvc": "6.0.0-rc1-final",
     "Microsoft.AspNet.Server.WebListener": "1.0.0-rc1-final",
@@ -26,14 +27,49 @@
   "commands": {
     "web": "Microsoft.AspNet.Hosting --server Microsoft.AspNet.Server.WebListener --server.urls http://localhost:41532",
     "run": "run server.urls=http://localhost:41532"
+=======
+    "Microsoft.AspNet.Mvc": "6.0.0-*",
+    "Microsoft.AspNet.DataProtection.Extensions": "1.0.0-*",
+    "Microsoft.AspNet.Diagnostics": "1.0.0-*",
+    "Microsoft.AspNet.Identity": "3.0.0-*",
+    "Microsoft.AspNet.Identity.EntityFramework": "3.0.0-*",
+    "Microsoft.AspNet.Authentication.Cookies": "1.0.0-*",
+    "Microsoft.AspNet.Authentication.Facebook": "1.0.0-*",
+    "Microsoft.AspNet.Authentication.Google": "1.0.0-*",
+    "Microsoft.AspNet.Authentication.Twitter": "1.0.0-*",
+    "Microsoft.AspNet.Authorization": "1.0.0-*",
+    "Microsoft.AspNet.StaticFiles": "1.0.0-*",
+    "Microsoft.AspNet.Server.Kestrel": "1.0.0-*",
+    "EntityFramework.Commands": "7.0.0-*",
+    "EntityFramework.MicrosoftSqlServer": "7.0.0-*",
+    "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.0.0-*",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0-*",
+    "Microsoft.Extensions.Logging.Console": "1.0.0-*"
+  },
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+  "commands": {
+    "web": "IdentitySample.Mvc"
+>>>>>>> refs/remotes/aspnet/dev
   },
   "webroot": ".",
   "frameworks": {
     "dnx451": {
       "dependencies": {
+<<<<<<< HEAD
         "Microsoft.Extensions.Logging.NLog": "1.0.0-rc1-final"
       }
     },
     "dnxcore50": {}
   }
 }
+=======
+        "Microsoft.Extensions.Logging.NLog": "1.0.0-*"
+      }
+    },
+    "dnxcore50": {
+    }
+  }
+}
+>>>>>>> refs/remotes/aspnet/dev

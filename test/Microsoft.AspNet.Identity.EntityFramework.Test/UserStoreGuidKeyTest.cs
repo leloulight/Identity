@@ -25,17 +25,11 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
         }
     }
 
-    [TestCaseOrderer("Microsoft.AspNet.Identity.Test.PriorityOrderer", "Microsoft.AspNet.Identity.EntityFramework.Test")]
     public class UserStoreGuidTest : SqlStoreTestBase<GuidUser, GuidRole, Guid>
     {
-        private readonly string _connectionString = @"Server=(localdb)\mssqllocaldb;Database=SqlUserStoreGuidTest" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Year + ";Trusted_Connection=True;";
-
-        public override string ConnectionString
+        public UserStoreGuidTest(ScratchDatabaseFixture fixture)
+            : base(fixture)
         {
-            get
-            {
-                return _connectionString;
-            }
         }
 
         public class ApplicationUserStore : UserStore<GuidUser, GuidRole, TestDbContext, Guid>
@@ -50,12 +44,12 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         protected override void AddUserStore(IServiceCollection services, object context = null)
         {
-            services.AddInstance<IUserStore<GuidUser>>(new ApplicationUserStore((TestDbContext)context));
+            services.AddSingleton<IUserStore<GuidUser>>(new ApplicationUserStore((TestDbContext)context));
         }
 
         protected override void AddRoleStore(IServiceCollection services, object context = null)
         {
-            services.AddInstance<IRoleStore<GuidRole>>(new ApplicationRoleStore((TestDbContext)context));
+            services.AddSingleton<IRoleStore<GuidRole>>(new ApplicationRoleStore((TestDbContext)context));
         }
     }
 }

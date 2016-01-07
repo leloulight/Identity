@@ -1,5 +1,9 @@
+using System.IO;
 using IdentitySample.Models;
 using Microsoft.AspNet.Builder;
+using Microsoft.AspNet.DataProtection;
+using Microsoft.AspNet.Hosting;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Data.Entity;
 using Microsoft.Extensions.Configuration;
@@ -40,7 +44,13 @@ namespace IdentitySamples
                 options.DefaultAdminPassword = Configuration["DefaultAdminPassword"];
             });
 
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>(
+                options => {
+                    options.Cookies.ApplicationCookieAuthenticationScheme = "ApplicationCookie";
+                    options.Cookies.ApplicationCookie.AuthenticationScheme = IdentityCookieOptions.ApplicationCookieAuthenticationType = "ApplicationCookie";
+                    options.Cookies.ApplicationCookie.DataProtectionProvider = new DataProtectionProvider(new DirectoryInfo("C:\\Github\\Identity\\artifacts"));
+                    options.Cookies.ApplicationCookie.CookieName = "Interop";
+                })
                     .AddEntityFrameworkStores<ApplicationDbContext>()
                     .AddDefaultTokenProviders();
 
@@ -91,5 +101,14 @@ namespace IdentitySamples
             SampleData.InitializeIdentityDatabaseAsync(app.ApplicationServices).Wait();
         }
 
+        public static void Main(string[] args)
+        {
+            var application = new WebApplicationBuilder()
+                .UseConfiguration(WebApplicationConfiguration.GetDefault(args))
+                .UseStartup<Startup>()
+                .Build();
+
+            application.Run();
+        }
     }
 }

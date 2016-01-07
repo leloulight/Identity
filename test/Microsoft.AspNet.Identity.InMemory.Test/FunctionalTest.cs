@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.AspNet.Builder;
+using Microsoft.AspNet.Hosting;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Http.Authentication;
 using Microsoft.AspNet.Http.Features.Authentication;
+using Microsoft.AspNet.Identity.Test;
 using Microsoft.AspNet.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
 using Xunit;
-using Microsoft.AspNet.Identity.Test;
 
 namespace Microsoft.AspNet.Identity.InMemory
 {
@@ -30,7 +30,9 @@ namespace Microsoft.AspNet.Identity.InMemory
         [Fact]
         public void UseIdentityThrowsWithoutAddIdentity()
         {
-            Assert.Throws<InvalidOperationException>(() => TestServer.Create(app => app.UseIdentity()));
+            var builder = new WebApplicationBuilder()
+                .Configure(app => app.UseIdentity());
+            Assert.Throws<InvalidOperationException>(() => new TestServer(builder));
         }
 
         [Fact]
@@ -45,7 +47,9 @@ namespace Microsoft.AspNet.Identity.InMemory
             }));
 
             var transaction1 = await SendAsync(server, "http://example.com/createSimple");
-            transaction1.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, transaction1.Response.StatusCode);
             Assert.Null(transaction1.SetCookie);
         }
 
@@ -61,28 +65,28 @@ namespace Microsoft.AspNet.Identity.InMemory
             }));
 
             var transaction1 = await SendAsync(server, "http://example.com/createMe");
-            transaction1.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction1.Response.StatusCode);
             Assert.Null(transaction1.SetCookie);
 
             var transaction2 = await SendAsync(server, "http://example.com/pwdLogin/false");
-            transaction2.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction2.Response.StatusCode);
             Assert.NotNull(transaction2.SetCookie);
-            transaction2.SetCookie.ShouldNotContain("; expires=");
+            Assert.DoesNotContain("; expires=", transaction2.SetCookie);
 
             var transaction3 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
-            FindClaimValue(transaction3, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction3, ClaimTypes.Name));
             Assert.Null(transaction3.SetCookie);
 
             clock.Add(TimeSpan.FromMinutes(7));
 
             var transaction4 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
-            FindClaimValue(transaction4, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction4, ClaimTypes.Name));
             Assert.Null(transaction4.SetCookie);
 
             clock.Add(TimeSpan.FromMinutes(7));
 
             var transaction5 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
-            FindClaimValue(transaction5, ClaimTypes.Name).ShouldBe(null);
+            Assert.Null(FindClaimValue(transaction5, ClaimTypes.Name));
             Assert.Null(transaction5.SetCookie);
         }
 
@@ -98,29 +102,29 @@ namespace Microsoft.AspNet.Identity.InMemory
             }));
 
             var transaction1 = await SendAsync(server, "http://example.com/createMe");
-            transaction1.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction1.Response.StatusCode);
             Assert.Null(transaction1.SetCookie);
 
             var transaction2 = await SendAsync(server, "http://example.com/pwdLogin/" + rememberMe);
-            transaction2.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction2.Response.StatusCode);
             Assert.NotNull(transaction2.SetCookie);
             if (rememberMe)
             {
-                transaction2.SetCookie.ShouldContain("; expires=");
+                Assert.Contains("; expires=", transaction2.SetCookie);
             }
             else
             {
-                transaction2.SetCookie.ShouldNotContain("; expires=");
+                Assert.DoesNotContain("; expires=", transaction2.SetCookie);
             }
 
             var transaction3 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
-            FindClaimValue(transaction3, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction3, ClaimTypes.Name));
             Assert.Null(transaction3.SetCookie);
 
             // Make sure we don't get a new cookie yet
             clock.Add(TimeSpan.FromMinutes(10));
             var transaction4 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
-            FindClaimValue(transaction4, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction4, ClaimTypes.Name));
             Assert.Null(transaction4.SetCookie);
 
             // Go past SecurityStampValidation interval and ensure we get a new cookie
@@ -128,11 +132,11 @@ namespace Microsoft.AspNet.Identity.InMemory
 
             var transaction5 = await SendAsync(server, "http://example.com/me", transaction2.CookieNameValue);
             Assert.NotNull(transaction5.SetCookie);
-            FindClaimValue(transaction5, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction5, ClaimTypes.Name));
 
             // Make sure new cookie is valid
             var transaction6 = await SendAsync(server, "http://example.com/me", transaction5.CookieNameValue);
-            FindClaimValue(transaction6, ClaimTypes.Name).ShouldBe("hao");
+            Assert.Equal("hao", FindClaimValue(transaction6, ClaimTypes.Name));
         }
 
         [Fact]
@@ -141,18 +145,18 @@ namespace Microsoft.AspNet.Identity.InMemory
             var server = CreateServer();
 
             var transaction1 = await SendAsync(server, "http://example.com/createMe");
-            transaction1.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction1.Response.StatusCode);
             Assert.Null(transaction1.SetCookie);
 
             var transaction2 = await SendAsync(server, "http://example.com/twofactorRememeber");
-            transaction2.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction2.Response.StatusCode);
 
             var setCookie = transaction2.SetCookie;
-            setCookie.ShouldContain(new IdentityCookieOptions().TwoFactorRememberMeCookieAuthenticationScheme + "=");
-            setCookie.ShouldContain("; expires=");
+            Assert.Contains(new IdentityCookieOptions().TwoFactorRememberMeCookieAuthenticationScheme + "=", setCookie);
+            Assert.Contains("; expires=", setCookie);
 
             var transaction3 = await SendAsync(server, "http://example.com/isTwoFactorRememebered", transaction2.CookieNameValue);
-            transaction3.Response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, transaction3.Response.StatusCode);
         }
 
         private static string FindClaimValue(Transaction transaction, string claimType)
@@ -178,87 +182,89 @@ namespace Microsoft.AspNet.Identity.InMemory
 
         private static TestServer CreateServer(Action<IServiceCollection> configureServices = null, Func<HttpContext, Task> testpath = null, Uri baseAddress = null)
         {
-            var server = TestServer.Create(app =>
-            {
-                app.UseIdentity();
-                app.Use(async (context, next) =>
+            var builder = new WebApplicationBuilder()
+                .Configure(app =>
                 {
-                    var req = context.Request;
-                    var res = context.Response;
-                    var userManager = context.RequestServices.GetRequiredService<UserManager<TestUser>>();
-                    var signInManager = context.RequestServices.GetRequiredService<SignInManager<TestUser>>();
-                    PathString remainder;
-                    if (req.Path == new PathString("/normal"))
+                    app.UseIdentity();
+                    app.Use(async (context, next) =>
                     {
-                        res.StatusCode = 200;
-                    }
-                    else if (req.Path == new PathString("/createMe"))
+                        var req = context.Request;
+                        var res = context.Response;
+                        var userManager = context.RequestServices.GetRequiredService<UserManager<TestUser>>();
+                        var signInManager = context.RequestServices.GetRequiredService<SignInManager<TestUser>>();
+                        PathString remainder;
+                        if (req.Path == new PathString("/normal"))
+                        {
+                            res.StatusCode = 200;
+                        }
+                        else if (req.Path == new PathString("/createMe"))
+                        {
+                            var result = await userManager.CreateAsync(new TestUser("hao"), TestPassword);
+                            res.StatusCode = result.Succeeded ? 200 : 500;
+                        }
+                        else if (req.Path == new PathString("/createSimple"))
+                        {
+                            var result = await userManager.CreateAsync(new TestUser("simple"), "aaaaaa");
+                            res.StatusCode = result.Succeeded ? 200 : 500;
+                        }
+                        else if (req.Path == new PathString("/protected"))
+                        {
+                            res.StatusCode = 401;
+                        }
+                        else if (req.Path.StartsWithSegments(new PathString("/pwdLogin"), out remainder))
+                        {
+                            var isPersistent = bool.Parse(remainder.Value.Substring(1));
+                            var result = await signInManager.PasswordSignInAsync("hao", TestPassword, isPersistent, false);
+                            res.StatusCode = result.Succeeded ? 200 : 500;
+                        }
+                        else if (req.Path == new PathString("/twofactorRememeber"))
+                        {
+                            var user = await userManager.FindByNameAsync("hao");
+                            await signInManager.RememberTwoFactorClientAsync(user);
+                            res.StatusCode = 200;
+                        }
+                        else if (req.Path == new PathString("/isTwoFactorRememebered"))
+                        {
+                            var user = await userManager.FindByNameAsync("hao");
+                            var result = await signInManager.IsTwoFactorClientRememberedAsync(user);
+                            res.StatusCode = result ? 200 : 500;
+                        }
+                        else if (req.Path == new PathString("/twofactorSignIn"))
+                        {
+                        }
+                        else if (req.Path == new PathString("/me"))
+                        {
+                            var auth = new AuthenticateContext("Application");
+                            auth.Authenticated(context.User, new AuthenticationProperties().Items, new AuthenticationDescription().Items);
+                            Describe(res, auth);
+                        }
+                        else if (req.Path.StartsWithSegments(new PathString("/me"), out remainder))
+                        {
+                            var auth = new AuthenticateContext(remainder.Value.Substring(1));
+                            await context.Authentication.AuthenticateAsync(auth);
+                            Describe(res, auth);
+                        }
+                        else if (req.Path == new PathString("/testpath") && testpath != null)
+                        {
+                            await testpath(context);
+                        }
+                        else
+                        {
+                            await next();
+                        }
+                    });
+                })
+                .ConfigureServices(services =>
+                {
+                    services.AddIdentity<TestUser, TestRole>();
+                    services.AddSingleton<IUserStore<TestUser>, InMemoryUserStore<TestUser>>();
+                    services.AddSingleton<IRoleStore<TestRole>, InMemoryRoleStore<TestRole>>();
+                    if (configureServices != null)
                     {
-                        var result = await userManager.CreateAsync(new TestUser("hao"), TestPassword);
-                        res.StatusCode = result.Succeeded ? 200 : 500;
-                    }
-                    else if (req.Path == new PathString("/createSimple"))
-                    {
-                        var result = await userManager.CreateAsync(new TestUser("simple"), "aaaaaa");
-                        res.StatusCode = result.Succeeded ? 200 : 500;
-                    }
-                    else if (req.Path == new PathString("/protected"))
-                    {
-                        res.StatusCode = 401;
-                    }
-                    else if (req.Path.StartsWithSegments(new PathString("/pwdLogin"), out remainder))
-                    {
-                        var isPersistent = bool.Parse(remainder.Value.Substring(1));
-                        var result = await signInManager.PasswordSignInAsync("hao", TestPassword, isPersistent, false);
-                        res.StatusCode = result.Succeeded ? 200 : 500;
-                    }
-                    else if (req.Path == new PathString("/twofactorRememeber"))
-                    {
-                        var user = await userManager.FindByNameAsync("hao");
-                        await signInManager.RememberTwoFactorClientAsync(user);
-                        res.StatusCode = 200;
-                    }
-                    else if (req.Path == new PathString("/isTwoFactorRememebered"))
-                    {
-                        var user = await userManager.FindByNameAsync("hao");
-                        var result = await signInManager.IsTwoFactorClientRememberedAsync(user);
-                        res.StatusCode = result ? 200 : 500;
-                    }
-                    else if (req.Path == new PathString("/twofactorSignIn"))
-                    {
-                    }
-                    else if (req.Path == new PathString("/me"))
-                    {
-                        var auth = new AuthenticateContext("Application");
-                        auth.Authenticated(context.User, new AuthenticationProperties().Items, new AuthenticationDescription().Items);
-                        Describe(res, auth);
-                    }
-                    else if (req.Path.StartsWithSegments(new PathString("/me"), out remainder))
-                    {
-                        var auth = new AuthenticateContext(remainder.Value.Substring(1));
-                        await context.Authentication.AuthenticateAsync(auth);
-                        Describe(res, auth);
-                    }
-                    else if (req.Path == new PathString("/testpath") && testpath != null)
-                    {
-                        await testpath(context);
-                    }
-                    else
-                    {
-                        await next();
+                        configureServices(services);
                     }
                 });
-            },
-            services =>
-            {
-                services.AddIdentity<TestUser, TestRole>();
-                services.AddSingleton<IUserStore<TestUser>, InMemoryUserStore<TestUser>>();
-                services.AddSingleton<IRoleStore<TestRole>, InMemoryRoleStore<TestRole>>();
-                if (configureServices != null)
-                {
-                    configureServices(services);
-                }
-            });
+            var server = new TestServer(builder);
             server.BaseAddress = baseAddress;
             return server;
         }
@@ -278,7 +284,7 @@ namespace Microsoft.AspNet.Identity.InMemory
             }
             using (var memory = new MemoryStream())
             {
-                using (var writer = new XmlTextWriter(memory, Encoding.UTF8))
+                using (var writer = XmlWriter.Create(memory, new XmlWriterSettings { Encoding = Encoding.UTF8 }))
                 {
                     xml.WriteTo(writer);
                 }

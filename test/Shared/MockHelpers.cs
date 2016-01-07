@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Microsoft.Extensions.OptionsModel;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNet.Identity.Test
 {
@@ -55,7 +55,7 @@ namespace Microsoft.AspNet.Identity.Test
                     logStore.Append(state.ToString());
                     logStore.Append(" ");
                 });
-            logger.Setup(x => x.IsEnabled(LogLevel.Verbose)).Returns(true);
+            logger.Setup(x => x.IsEnabled(LogLevel.Debug)).Returns(true);
             logger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
 
             return logger;
